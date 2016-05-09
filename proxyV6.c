@@ -24,8 +24,8 @@ int main(int argc,char* argv[]) {
   struct sockaddr_in6 cli_addr,serv_addr;  // Définition des sockets
   struct hostent* host;
   int sockfd,newsockfd;
-  struct in6_addr someaddr = SOMEADDR;
-    serv_addr.sin6_addr = someaddr;
+  //struct in6_addr someaddr = SOMEADDR;
+  //  serv_addr.sin6_addr = someaddr;
   char straddr[INET6_ADDRSTRLEN];
 
   if(argc<2)
@@ -39,7 +39,7 @@ int main(int argc,char* argv[]) {
 
   serv_addr.sin6_family=AF_INET6;                 // Adresse IPV6
   serv_addr.sin6_port=htons(atoi(argv[1]));      // Numéro de port en paramètre de l'executable
-  serv_addr.sin6_addr = someaddr;
+  serv_addr.sin6_addr = in6addr_any;
   serv_addr.sin6_scope_id =0;
 
 
@@ -136,7 +136,7 @@ int main(int argc,char* argv[]) {
       sprintf(t2,"%s",tmp);
       printf("host = %s",t2);
 
-      host=getaddrinfo(t2, t1,&host_addr ,NULL);
+      host=gethostbyname(t2);
 
       if(specified==1)
       {

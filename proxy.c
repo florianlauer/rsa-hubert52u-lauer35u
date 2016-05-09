@@ -74,18 +74,18 @@ int main(int argc,char* argv[]) {
     char buffer[510],t1[300],t2[300],t3[10];
     char* tmp=NULL;
     bzero((char*)buffer,500);
-    
+
     // Equivalent à read(), attente d'un message de la socket de dialogue
 
     recv(newsockfd,buffer,500,0);
 
     /*
 
-    Découpage de la requête en trois variables 
-    
-    GET -> t1 
-    url -> t2 
-    HTTP/1.1 -> t3 
+    Découpage de la requête en trois variables
+
+    GET -> t1
+    url -> t2
+    HTTP/1.1 -> t3
 
     */
 
@@ -93,9 +93,9 @@ int main(int argc,char* argv[]) {
 
     /*
 
-    Vérification de la structure des requêtes : 
-    
-    GET url HTTP/1.1 
+    Vérification de la structure des requêtes :
+
+    GET url HTTP/1.1
 
     */
 
@@ -119,11 +119,11 @@ int main(int argc,char* argv[]) {
       if(specified==0)
       {
         port=80;
-        tmp=strtok(NULL,"/");   // www.syphiliste.tk/lol -> "www.syphiliste.tk" et "lol" 
+        tmp=strtok(NULL,"/");   // www.syphiliste.tk/lol -> "www.syphiliste.tk" et "lol"
       }
       else
       {
-        tmp=strtok(NULL,":");   // www.syphiliste.tk:99 -> "www.syphiliste.tk et "99" 
+        tmp=strtok(NULL,":");   // www.syphiliste.tk:99 -> "www.syphiliste.tk et "99"
       }
 
       sprintf(t2,"%s",tmp);
@@ -138,49 +138,49 @@ int main(int argc,char* argv[]) {
       }
 
       strcat(t1,"^]");          // http://www.syphiliste.tk:99/lol -> http://www.syphiliste.tk:99/lol^]
-     
+
       tmp=strtok(t1,"//");      // http://www.syphiliste.tk:99/lol^] -> "http:" et "www.syphiliste.tk:99/lol^]"
-     
+
       tmp=strtok(NULL,"/");     // "www.syphiliste.tk:99/lol^]" -> "www.syphiliste.tk:99"
-     
+
       if(tmp!=NULL)             // Si on est à la racine
-        tmp=strtok(NULL,"^]");  
+        tmp=strtok(NULL,"^]");
       printf("\npath = %s\nPort = %d\n",tmp,port);
 
 
       bzero(&host_addr,sizeof(host_addr));
-      
+
       host_addr.sin_port=htons(port);
       host_addr.sin_family=AF_INET;     // ipv4
-      
+
       bcopy((char*)host->h_addr,(char*)&host_addr.sin_addr.s_addr,host->h_length);
 
-      sockfd1=socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+      sockfd1=socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);    // Création de la socket d'écoute
       newsockfd1=connect(sockfd1,(struct sockaddr*)&host_addr,sizeof(struct sockaddr));
-      sprintf(buffer,"\nConnected to %s  IP - %s\n",t2,inet_ntoa(host_addr.sin_addr));
+      sprintf(buffer,"\nConnecté au site %s  d'IP : %s\n",t2,inet_ntoa(host_addr.sin_addr));
       if(newsockfd1<0)
-        error("Error in connecting to remote server");
+        error("Erreur de connexion à hôte");
 
       printf("\n%s\n",buffer);
       //send(newsockfd,buffer,strlen(buffer),0);
-      bzero((char*)buffer,sizeof(buffer));
+      bzero((char*)buffer,sizeof(buffer));   // Reset du buffer
       if(tmp!=NULL)
         sprintf(buffer,"GET /%s %s\r\nHost: %s\r\nConnection: close\r\n\r\n",tmp,t3,t2);
       else
         sprintf(buffer,"GET / %s\r\nHost: %s\r\nConnection: close\r\n\r\n",t3,t2);
 
 
-      n=send(sockfd1,buffer,strlen(buffer),0);
+      n=send(sockfd1,buffer,strlen(buffer),0);    // Ecriture du buffer sur la socket d'écoute
       printf("\n%s\n",buffer);
       if(n<0)
-        error("Error writing to socket");
+        error("Erreur d'écriture sur la socket");
       else{
         do
         {
           bzero((char*)buffer,500);
-          n=recv(sockfd1,buffer,500,0);
-          if(!(n<=0))
-            send(newsockfd,buffer,n,0);
+          n=recv(sockfd1,buffer,500,0);     // n renvoie la longueur du message reçu
+          if(!(n<=0))                       // s'il est négatif ou nul
+            send(newsockfd,buffer,n,0);     // on tente de renvoyer le message
         }while(n>0);
       }
     }
