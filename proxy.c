@@ -18,9 +18,10 @@ void error(char* msg) {
 
 int main(int argc,char* argv[]) {
   pid_t pid;
-  struct sockaddr_in cli_addr,serv_addr;  // Définition des sockets
-  struct hostent* host;
   int sockfd,newsockfd;
+  char * port_str = NULL;
+  struct sockaddr_in addr_client, addr_serveur;  // Définition des sockets
+  
 
   if(argc<2)
     error("veuillez rentrer le numéro de port en argument");
@@ -28,29 +29,29 @@ int main(int argc,char* argv[]) {
 
   /* Initalisation des sockets à zéro */
 
-  bzero(&serv_addr, sizeof(serv_addr));
-  bzero(&cli_addr, sizeof(cli_addr));
+  bzero(&addr_serveur, sizeof(addr_serveur));
+  bzero(&addr_client, sizeof(addr_client));
 
-  serv_addr.sin_family=AF_INET;                 // Adresse IPV4
-  serv_addr.sin_port=htons(atoi(argv[1]));      // Numéro de port en paramètre de l'executable
-  serv_addr.sin_addr.s_addr=INADDR_ANY;         // Accepte toutes les IPs des machines
+  addr_serveur.sin_family=AF_UNSPEC;                 // Adresse IPV4
+  addr_serveur.sin_port=htons(atoi(argv[1]));      // Numéro de port en paramètre de l'executable
+  addr_serveur.sin_addr.s_addr=INADDR_ANY;         // Accepte toutes les IPs des machines
 
 
   /* Ouverture de la socket d'écoute*/
 
-  sockfd=socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+  sockfd=socket(IPV6_V6ONLY,SOCK_STREAM,IPPROTO_TCP);
 
   if(sockfd<0) {
     error("Problème lors de l'initialisation");
   }
 
-  if(bind(sockfd,(struct sockaddr*)&serv_addr,sizeof(serv_addr))<0) {
+  if(bind(sockfd,(struct sockaddr*)&addr_serveur,sizeof(addr_serveur))<0) {
     error("Erreur de bind");
   }
 
 
   listen(sockfd,30);                            // La socket se met en écoute, file d'attente de 30 connexions
-  int clilen=sizeof(cli_addr);
+  int clilen=sizeof(addr_client);
 
 
 
@@ -58,7 +59,7 @@ int main(int argc,char* argv[]) {
 
   /* Création de la socket de dialogue*/
 
-  newsockfd=accept(sockfd,(struct sockaddr*)&cli_addr,&clilen);
+  newsockfd=accept(sockfd,(struct sockaddr*)&addr_client,&clilen);
 
   if(newsockfd<0) {
     error("Problème lors du accept");
@@ -68,11 +69,13 @@ int main(int argc,char* argv[]) {
 
   pid=fork();
 
+
   if(pid==0) {
-    struct sockaddr_in host_addr;
+
     int specified=0,newsockfd1,n,port=0,i,sockfd1;
     char buffer[510],t1[300],t2[300],t3[10];
     char* tmp=NULL;
+    
     bzero((char*)buffer,500);
 
     // Equivalent à read(), attente d'un message de la socket de dialogue
@@ -129,11 +132,35 @@ int main(int argc,char* argv[]) {
       sprintf(t2,"%s",tmp);
       printf("host = %s",t2);
 
-      host=gethostbyname(t2);
+
+      struct addrinfo hints, * res;
+
+      bzero(&res,sizeof(struct addrinfo));
+
+      memset(&hints, 0, sizeof(hints));
+      hints.ai_family = AF_UNSPEC;
+      hints.ai_socktype = SOCK_STREAM;
+      hints.ai_flags = AI_PASSIVE;
+
+      //printf("\n %d :  %s : \n", getaddrinfo(t2, NULL, &hints, &res), gai_strerror(getaddrinfo(t2, NULL, &hints, &res)));
+
+
+
+      if (getaddrinfo(t2, NULL, &hints, &res) != 0) {
+              perror("getaddrinfo");
+              return 1;
+            }
+
+      
+
+      
+
+
 
       if(specified==1)
       {
         tmp=strtok(NULL,"/");
+        port_str = tmp;
         port=atoi(tmp);         // tmp = "99" si specified = 1
       }
 
@@ -145,19 +172,66 @@ int main(int argc,char* argv[]) {
 
       if(tmp!=NULL)             // Si on est à la racine
         tmp=strtok(NULL,"^]");
-      printf("\npath = %s\nPort = %d\n",tmp,port);
+      
+      printf("Coucou"); 
+      printf("\nPath = %s\nPort = %d\n",tmp,port);
+
+      
+
+          struct sockaddr_in * host_addr; 
+          struct sockaddr_in6 * host_addr6;
+
+          //bzero(host_addr, sizeof(host_addr));
+          //bzero(host_addr6, sizeof(host_addr6));
+             
+
+          char  tmp2 [INET_ADDRSTRLEN];   // "Human-readable" adresse IP
+
+      switch(res->ai_family){
+
+          case AF_INET:
+          host_addr = (struct sockaddr_in *) (res -> ai_addr) ;  // Paramétrage du socket de communication avec le serveur à partir des infos dans res
+          host_addr->sin_port=htons(port);
+          host_addr->sin_family=AF_INET;     // ipv4
 
 
-      bzero(&host_addr,sizeof(host_addr));
 
-      host_addr.sin_port=htons(port);
-      host_addr.sin_family=AF_INET;     // ipv4
+          sockfd1=socket(AF_INET,res -> ai_socktype,res -> ai_protocol);    // Création de la socket d'écoute
+          newsockfd1=connect(sockfd1,(struct sockaddr*)host_addr,sizeof(struct sockaddr));
+                
+          inet_ntop(AF_INET, &(host_addr->sin_addr), tmp2, INET_ADDRSTRLEN);      //Cast de l'adresse dans un format lisible
+          sprintf(buffer,"\nConnecté au site %s  d'IP : %s\n",t2,tmp2);
 
-      bcopy((char*)host->h_addr,(char*)&host_addr.sin_addr.s_addr,host->h_length);
+          break;
+          case AF_INET6:
+          host_addr6 = (struct sockaddr_in6 *) (res -> ai_addr) ;  // Paramétrage du socket de communication avec le serveur à partir des infos dans res
+          host_addr6->sin6_port=htons(port);
+          host_addr6->sin6_family=AF_INET6;     // ipv6
+          host_addr6->sin6_addr = in6addr_any;
+          host_addr6->sin6_scope_id =0;
 
-      sockfd1=socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);    // Création de la socket d'écoute
-      newsockfd1=connect(sockfd1,(struct sockaddr*)&host_addr,sizeof(struct sockaddr));
-      sprintf(buffer,"\nConnecté au site %s  d'IP : %s\n",t2,inet_ntoa(host_addr.sin_addr));
+          /*struct sockaddr * tmp_sockaddr = (struct sockaddr*)host_addr6;
+          tmp_sockaddr->sa_family = AF_INET6;*/
+
+          sockfd1=socket(AF_INET6,res -> ai_socktype,res -> ai_protocol);    // Création de la socket d'écoute
+          newsockfd1=connect(sockfd1,res -> ai_addr,res -> ai_addrlen);
+
+          inet_ntop(AF_INET6, &(host_addr6->sin6_addr), tmp2, INET_ADDRSTRLEN); //Cast de l'adresse dans un format lisible
+          sprintf(buffer,"\nConnecté au site %s  d'IP : %s\n",t2,tmp2);
+          
+
+          break;
+
+
+
+      }
+
+
+     
+      
+
+      
+      
       if(newsockfd1<0)
         error("Erreur de connexion à hôte");
 
