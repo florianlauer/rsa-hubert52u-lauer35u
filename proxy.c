@@ -39,7 +39,7 @@ int main(int argc,char* argv[]) {
 
   /* Ouverture de la socket d'écoute*/
 
-  sockfd=socket(IPV6_V6ONLY,SOCK_STREAM,IPPROTO_TCP);
+  sockfd=socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
 
   if(sockfd<0) {
     error("Problème lors de l'initialisation");
