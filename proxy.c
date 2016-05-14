@@ -21,7 +21,7 @@ int main(int argc,char* argv[]) {
   int sockfd,newsockfd;
   char * port_str = NULL;
   struct sockaddr_in addr_client, addr_serveur;  // Définition des sockets
-  
+
 
   if(argc<2)
     error("veuillez rentrer le numéro de port en argument");
@@ -75,7 +75,7 @@ int main(int argc,char* argv[]) {
     int specified=0,newsockfd1,n,port=0,i,sockfd1;
     char buffer[510],t1[300],t2[300],t3[10];
     char* tmp=NULL;
-    
+
     bzero((char*)buffer,500);
 
     // Equivalent à read(), attente d'un message de la socket de dialogue
@@ -151,9 +151,9 @@ int main(int argc,char* argv[]) {
               return 1;
             }
 
-      
 
-      
+
+
 
 
 
@@ -172,18 +172,18 @@ int main(int argc,char* argv[]) {
 
       if(tmp!=NULL)             // Si on est à la racine
         tmp=strtok(NULL,"^]");
-      
-      printf("Coucou"); 
+
+      printf("Coucou");
       printf("\nPath = %s\nPort = %d\n",tmp,port);
 
-      
 
-          struct sockaddr_in * host_addr; 
+
+          struct sockaddr_in * host_addr;
           struct sockaddr_in6 * host_addr6;
 
           //bzero(host_addr, sizeof(host_addr));
           //bzero(host_addr6, sizeof(host_addr6));
-             
+
 
           char  tmp2 [INET_ADDRSTRLEN];   // "Human-readable" adresse IP
 
@@ -198,7 +198,7 @@ int main(int argc,char* argv[]) {
 
           sockfd1=socket(AF_INET,res -> ai_socktype,res -> ai_protocol);    // Création de la socket d'écoute
           newsockfd1=connect(sockfd1,(struct sockaddr*)host_addr,sizeof(struct sockaddr));
-                
+
           inet_ntop(AF_INET, &(host_addr->sin_addr), tmp2, INET_ADDRSTRLEN);      //Cast de l'adresse dans un format lisible
           sprintf(buffer,"\nConnecté au site %s  d'IP : %s\n",t2,tmp2);
 
@@ -218,7 +218,7 @@ int main(int argc,char* argv[]) {
 
           inet_ntop(AF_INET6, &(host_addr6->sin6_addr), tmp2, INET_ADDRSTRLEN); //Cast de l'adresse dans un format lisible
           sprintf(buffer,"\nConnecté au site %s  d'IP : %s\n",t2,tmp2);
-          
+
 
           break;
 
@@ -227,11 +227,11 @@ int main(int argc,char* argv[]) {
       }
 
 
-     
-      
 
-      
-      
+
+
+
+
       if(newsockfd1<0)
         error("Erreur de connexion à hôte");
 
